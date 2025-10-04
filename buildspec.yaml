@@ -42,12 +42,12 @@ phases:
   post_build:
     commands:
       # Use a single YAML string for the multi-line CLI command
-      - |
-        aws ses send-email \
-          --from "madithati123@gmail.com" \
-          --destination "ToAddresses=madithati123@gmail.com" \
-          --message "Subject={Data=CodeBuild Status: ${CODEBUILD_BUILD_ID}},Body={Text={Data=Build status: ${CODEBUILD_BUILD_STATUS}}}" \
-          --region "us-east-1"
+      #- |
+      #  aws ses send-email \
+      #    --from "madithati123@gmail.com" \
+      #    --destination "ToAddresses=madithati123@gmail.com" \
+      #    --message "Subject={Data=CodeBuild Status: ${CODEBUILD_BUILD_ID}},Body={Text={Data=Build status: ${CODEBUILD_BUILD_STATUS}}}" \
+      #    --region "us-east-1"
       # Si prefieres tu sintaxis anterior, también sirve, pero siempre como bloque literal:
       # - |
       #   aws ses send-email \
