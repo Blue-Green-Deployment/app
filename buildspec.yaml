@@ -43,7 +43,7 @@ phases:
   post_build:
     commands:
       - |
-        set -euo pipefail
+        set -eu
         echo "Resolving executionRoleArn for taskdef.json..."
         export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
         : "${PROJECT_NAME:=swiggy-clone}"
