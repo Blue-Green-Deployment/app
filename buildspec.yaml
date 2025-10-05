@@ -41,6 +41,22 @@ phases:
 
   post_build:
     commands:
+      - echo "Resolving executionRoleArn for taskdef.json..."
+      - export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+      - echo "Using account: $ACCOUNT_ID and project: $PROJECT_NAME"
+      - |
+        python - <<'PY'
+        import json, os
+        account_id = os.environ.get('ACCOUNT_ID')
+        project    = os.environ.get('PROJECT_NAME', 'swiggy-clone')
+        path = 'taskdef.json'
+        with open(path) as f:
+            data = json.load(f)
+        data['executionRoleArn'] = f"arn:aws:iam::{account_id}:role/{project}-ecsTaskExecutionRole"
+        with open(path, 'w') as f:
+            json.dump(data, f, indent=2)
+        print('Updated executionRoleArn to', data['executionRoleArn'])
+        PY
       # Use a single YAML string for the multi-line CLI command
       #- |
       #  aws ses send-email \
