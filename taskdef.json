@@ -1,0 +1,16 @@
+{
+  "family": "swiggy-clone",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::014498617914:role/swiggy-clone-ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "swiggy",
+      "image": "public.ecr.aws/nginx/nginx:latest",
+      "essential": true,
+      "portMappings": [{ "containerPort": 3000, "hostPort": 3000, "protocol": "tcp" }]
+    }
+  ]
+}
