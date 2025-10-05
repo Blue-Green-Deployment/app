@@ -35,27 +35,39 @@ phases:
     commands:
       - echo "Running tests..."
       - echo "Building Docker image..."
-      # - echo "$DOCKER_REGISTRY_PASSWORD" | docker login -u "$DOCKER_REGISTRY_USERNAME" --password-stdin "$DOCKER_REGISTRY_URL"
-      # - docker build -t "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest" .
-      # - docker push "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest"
+      - echo "Logging into ECR and building image..."
+      - aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin "$(echo $ECR_REPO | cut -d'/' -f1)"
+      - docker build -t "$ECR_REPO:latest" .
+      - docker push "$ECR_REPO:latest"
 
   post_build:
     commands:
-      - echo "Resolving executionRoleArn for taskdef.json..."
-      - export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-      - echo "Using account: $ACCOUNT_ID and project: $PROJECT_NAME"
       - |
-        python - <<'PY'
+        set -euo pipefail
+        echo "Resolving executionRoleArn for taskdef.json..."
+        export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+        : "${PROJECT_NAME:=swiggy-clone}"
+        echo "Using account: ${ACCOUNT_ID} and project: ${PROJECT_NAME}"
+        ACCOUNT_ID="${ACCOUNT_ID}" PROJECT_NAME="${PROJECT_NAME}" python - <<'PY'
         import json, os
-        account_id = os.environ.get('ACCOUNT_ID')
+        account_id = os.environ['ACCOUNT_ID']
         project    = os.environ.get('PROJECT_NAME', 'swiggy-clone')
+        ecr_repo   = os.environ.get('ECR_REPO')
         path = 'taskdef.json'
         with open(path) as f:
             data = json.load(f)
         data['executionRoleArn'] = f"arn:aws:iam::{account_id}:role/{project}-ecsTaskExecutionRole"
+        if ecr_repo:
+            # Ensure image points to ECR repo we just built
+            try:
+                data['containerDefinitions'][0]['image'] = f"{ecr_repo}:latest"
+            except Exception:
+                pass
         with open(path, 'w') as f:
             json.dump(data, f, indent=2)
         print('Updated executionRoleArn to', data['executionRoleArn'])
+        if ecr_repo:
+            print('Updated image to', f"{ecr_repo}:latest")
         PY
       # Use a single YAML string for the multi-line CLI command
       #- |
